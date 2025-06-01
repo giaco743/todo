@@ -39,8 +39,9 @@ fn main() -> anyhow::Result<()> {
         }
     }) {
         let Todo { ticket_id, message } = todo;
+        let file = file.to_str().expect("Filename is a valid unicode string");
         println!(
-            "{file:?}: {line} -> {ticket_id}{}",
+            "{file}:{line} -> {ticket_id}{}",
             message.map(|msg| format!(": {msg}")).unwrap_or_default()
         );
     }
