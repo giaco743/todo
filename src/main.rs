@@ -39,7 +39,10 @@ fn main() -> anyhow::Result<()> {
         }
     }) {
         let Todo { ticket_id, message } = todo;
-        println!("{file:?}: {line} -> {ticket_id}: {message:?}");
+        println!(
+            "{file:?}: {line} -> {ticket_id}{}",
+            message.map(|msg| format!(": {msg}")).unwrap_or_default()
+        );
     }
     Ok(())
 }
