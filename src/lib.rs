@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use structre::structre;
 
+pub mod git;
+
 #[structre(r".*?//[ \t]*TODO\((?P<ticket_id>[^)]+)\)(?::[ \t]*(?P<message>.*))?")]
 #[derive(Debug, PartialEq, Eq)]
 pub struct Todo {
@@ -51,7 +53,6 @@ mod tests {
     #[case::standalone_todo_with_no_whitespace_message("// TODO(ID-1234):Do this soon", Todo{ticket_id: "ID-1234".to_string(), message: Some("Do this soon".to_string())})]
     #[case::inline_todo_with_message("let x = 5; // TODO(ID-1234): Do this soon", Todo{ticket_id: "ID-1234".to_string(), message: Some("Do this soon".to_string())})]
     #[case::no_whitespace_inline_todo_with_message("let x = 5;// TODO(ID-1234): Do this soon", Todo{ticket_id: "ID-1234".to_string(), message: Some("Do this soon".to_string())})]
-    #[test]
     fn test_parse_code_lines(#[case] line: &str, #[case] expected_todo: Todo) {
         assert_eq!(Todo::try_from(line).unwrap(), expected_todo);
     }
