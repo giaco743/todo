@@ -9,6 +9,8 @@ struct CliArgs {
     path: PathBuf,
     #[arg(short, long)]
     extensions: Vec<String>,
+    #[arg(short, long)]
+    issue: Option<String>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -29,7 +31,13 @@ fn main() -> anyhow::Result<()> {
         })
         .collect();
 
-    for TodoInCode { file, line, todo } in todos(files)? {
+    for TodoInCode { file, line, todo } in todos(files)?.into_iter().filter(|todo| {
+        if let Some(issue) = &args.issue {
+            &todo.todo.ticket_id == issue
+        } else {
+            true
+        }
+    }) {
         let Todo { ticket_id, message } = todo;
         println!("{file:?}: {line} -> {ticket_id}: {message:?}");
     }
