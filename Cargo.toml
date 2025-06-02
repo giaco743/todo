@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.98"
 clap = { version = "4.5.39", features = ["derive"] }
 git2 = "0.20.2"
+regex = "1.11.1"
 rstest = "0.25.0"
 structre = "0.2.0"
 walkdir = "2.5.0"

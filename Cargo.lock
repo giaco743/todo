@@ -782,6 +782,7 @@ dependencies = [
  "assert_unordered",
  "clap",
  "git2",
+ "regex",
  "rstest",
  "structre",
  "walkdir",

@@ -1,18 +1,29 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use git2::Repository;
-use structre::structre;
+use regex::Regex;
 
-#[structre(r"(?m)^Issue:[ \t]*([A-Z]+-[0-9]+)[ \t]*$")]
-#[derive(Debug, PartialEq, Eq)]
-pub struct TicketId(pub String);
+fn extract_issue_ids(commit_msg: &str) -> Vec<String> {
+    let re = Regex::new(r"(?m)^Issue:\s*(.+)$").unwrap();
 
-fn new_commit_messages(path: PathBuf) -> anyhow::Result<Vec<String>> {
+    if let Some(caps) = re.captures(commit_msg) {
+        let issues = &caps[1];
+        return issues
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+    }
+
+    vec![]
+}
+
+fn new_commit_messages<P: AsRef<Path>>(path: P, base: &str) -> anyhow::Result<Vec<String>> {
     let repo = Repository::open(path)?;
 
     // Referenzen auf HEAD und origin/master
     let head = repo.revparse_single("HEAD")?.peel_to_commit()?;
-    let base = repo.revparse_single("master")?.peel_to_commit()?;
+    let base = repo.revparse_single(base)?.peel_to_commit()?;
 
     // Revwalk vorbereiten: alle Commits von HEAD bis origin/master (nur was HEAD voraus ist)
     let mut revwalk = repo.revwalk()?;
@@ -30,11 +41,12 @@ fn new_commit_messages(path: PathBuf) -> anyhow::Result<Vec<String>> {
         .collect())
 }
 
-pub fn resolving_issues(path: PathBuf) -> anyhow::Result<Vec<TicketId>> {
-    new_commit_messages(path)?
+pub fn resolving_issues<P: AsRef<Path>>(path: P, base: &str) -> anyhow::Result<Vec<String>> {
+    Ok(new_commit_messages(path, base)?
         .into_iter()
-        .map(|msg| TicketId::try_from(msg.as_str()).map_err(anyhow::Error::msg))
-        .collect()
+        .map(|msg| extract_issue_ids(&msg))
+        .flatten()
+        .collect())
 }
 
 #[cfg(test)]
@@ -50,13 +62,20 @@ mod tests {
 Long descriptive text.
 
 Issue: ICONSD-1234",
-        TicketId("ICONSD-1234".to_string())
+        Vec::from(["ICONSD-1234".to_string()])
     )]
     #[case(
         r"Issue: ICONSD-1234",
-        TicketId("ICONSD-1234".to_string())
+        Vec::from(["ICONSD-1234".to_string()])
     )]
-    fn test_parse_id_from_comment(#[case] given_commit_msg: &str, #[case] expected_id: TicketId) {
-        assert_eq!(TicketId::try_from(given_commit_msg).unwrap(), expected_id);
+    #[case(
+        r"Issue: ICONSD-1234, ICONSD-4321",
+        Vec::from(["ICONSD-1234".to_string(), "ICONSD-4321".to_string()])
+    )]
+    fn test_parse_id_from_comment(
+        #[case] given_commit_msg: &str,
+        #[case] expected_id: Vec<String>,
+    ) {
+        assert_eq!(extract_issue_ids(given_commit_msg), expected_id);
     }
 }
