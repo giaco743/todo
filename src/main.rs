@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use todo::{git, todos, Todo, TodoInCode};
+use todo::{
+    git,
+    todos::{todos, Todo, TodoInCode},
+};
 use walkdir::WalkDir;
 
 #[derive(Parser)]

@@ -1,5 +1,5 @@
 use assert_unordered::assert_eq_unordered;
-use todo::{Todo, TodoInCode};
+use todo::todos::{todos, Todo, TodoInCode};
 
 #[test]
 fn all_files() {
@@ -42,5 +42,5 @@ fn all_files() {
         "tests/data/b.txt".into(),
         "tests/data/rs_file.rs".into(),
     ];
-    assert_eq_unordered!(expected, todo::todos(given_paths).unwrap());
+    assert_eq_unordered!(expected, todos(given_paths).unwrap());
 }
