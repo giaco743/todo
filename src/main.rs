@@ -7,13 +7,22 @@ use todo::{
 };
 use walkdir::WalkDir;
 
+/// Checks for unresolved TODOs linked to issues in codebase
 #[derive(Parser)]
 struct CliArgs {
+    /// Path to codebase
     path: PathBuf,
+    /// Only check files with given extensions.
     #[arg(short, long)]
     extensions: Vec<String>,
+    /// Search for ToDos associated to given issue ID
     #[arg(short, long)]
     issue: Option<String>,
+    /// Specifies the base Git branch to compare against.
+    /// The tool will collect all commits from the current HEAD
+    /// that are not in <branch>, extract referenced issue IDs
+    /// from their commit messages, and check the codebase for
+    /// unresolved TODOs related to those issues.
     #[arg(long)]
     git: Option<String>,
 }
