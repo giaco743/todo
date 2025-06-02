@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use todo::{
     git,
-    todos::{todos, Todo, TodoInCode},
+    todos::{todos, TodoInCode},
 };
 use walkdir::WalkDir;
 
@@ -19,14 +19,18 @@ struct CliArgs {
 }
 
 fn print_todos(todos: &Vec<TodoInCode>, issue: &Option<String>) {
-    for TodoInCode { file, line, todo } in todos.into_iter().filter(|todo| {
+    for TodoInCode {
+        file,
+        line,
+        ticket_id,
+        message,
+    } in todos.into_iter().filter(|todo| {
         if let Some(issue) = issue {
-            &todo.todo.ticket_id == issue
+            &todo.ticket_id == issue
         } else {
             true
         }
     }) {
-        let Todo { ticket_id, message } = todo;
         let file = file.to_str().expect("Filename is a valid unicode string");
         println!(
             "{file}:{line} -> {ticket_id}{}",
@@ -76,7 +80,7 @@ fn main() -> anyhow::Result<()> {
         let resolving_issues = git::resolving_issues(&args.path, &base_branch)?;
         let unresolved_todos: Vec<TodoInCode> = todos
             .into_iter()
-            .filter(|todo| resolving_issues.contains(&todo.todo.ticket_id))
+            .filter(|todo| resolving_issues.contains(&todo.ticket_id))
             .collect();
         if !unresolved_todos.is_empty() {
             println!("Following todos associated with ticket IDs: {resolving_issues:?} are not yet resolved:");

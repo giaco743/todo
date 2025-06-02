@@ -5,16 +5,29 @@ use structre::structre;
 
 #[structre(r".*?//[ \t]*TODO\((?P<ticket_id>[^)]+)\)(?::[ \t]*(?P<message>.*))?")]
 #[derive(Debug, PartialEq, Eq)]
-pub struct Todo {
+struct Todo {
     pub ticket_id: String,
     pub message: Option<String>,
+}
+
+impl Todo {
+    fn with_location(self, file: PathBuf, line: usize) -> TodoInCode {
+        let Todo { ticket_id, message } = self;
+        TodoInCode {
+            file,
+            line,
+            ticket_id,
+            message,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct TodoInCode {
     pub file: PathBuf,
     pub line: usize,
-    pub todo: Todo,
+    pub ticket_id: String,
+    pub message: Option<String>,
 }
 
 pub fn todos(files: Vec<PathBuf>) -> anyhow::Result<Vec<TodoInCode>> {
@@ -26,11 +39,7 @@ pub fn todos(files: Vec<PathBuf>) -> anyhow::Result<Vec<TodoInCode>> {
                 .enumerate()
                 .filter_map(|(n, line)| {
                     Todo::try_from(line)
-                        .map(|todo| TodoInCode {
-                            file: file.to_path_buf(),
-                            line: n + 1,
-                            todo: todo,
-                        })
+                        .map(|todo| todo.with_location(file.to_path_buf(), n + 1))
                         .ok()
                 })
                 .collect(),
