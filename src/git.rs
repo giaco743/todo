@@ -21,11 +21,9 @@ fn extract_issue_ids(commit_msg: &str) -> Vec<String> {
 fn new_commit_messages<P: AsRef<Path>>(path: P, base: &str) -> anyhow::Result<Vec<String>> {
     let repo = Repository::open(path)?;
 
-    // Referenzen auf HEAD und origin/master
     let head = repo.revparse_single("HEAD")?.peel_to_commit()?;
     let base = repo.revparse_single(base)?.peel_to_commit()?;
 
-    // Revwalk vorbereiten: alle Commits von HEAD bis origin/master (nur was HEAD voraus ist)
     let mut revwalk = repo.revwalk()?;
     revwalk.push(head.id())?;
     revwalk.hide(base.id())?;
