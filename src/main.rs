@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use todo::{
@@ -42,11 +42,9 @@ fn print_todos(todos: &Vec<TodoInCode>, issue: &Option<String>) {
     }
 }
 
-fn main() -> anyhow::Result<()> {
-    let args = CliArgs::parse();
-
-    let walker = WalkDir::new(&args.path).into_iter();
-    let files = walker
+fn files<P: AsRef<Path>>(path: P, extensions: &Vec<String>) -> Vec<PathBuf> {
+    let walker = WalkDir::new(path).into_iter();
+    walker
         .filter_entry(|e| {
             if let Some(filename) = e.file_name().to_str() {
                 !filename.starts_with(".") // skip .git
@@ -56,28 +54,32 @@ fn main() -> anyhow::Result<()> {
         })
         .filter_map(|e| e.map(|e| e.path().to_path_buf()).ok())
         .filter(|path| {
-            if args.extensions.is_empty() {
+            if extensions.is_empty() {
                 path.is_file()
             } else if let Some(ext) = path.extension() {
-                args.extensions
-                    .contains(&ext.to_str().expect("Extension is Unicode").to_string())
+                extensions.contains(&ext.to_str().expect("Extension is Unicode").to_string())
             } else {
                 false
             }
         })
-        .collect();
+        .collect()
+}
+
+fn main() -> anyhow::Result<()> {
+    let args = CliArgs::parse();
 
     println!(
         "Extract pending ToDos from codebase at {}",
         args.path.display()
     );
+    let files = files(&args.path, &args.extensions);
     let todos = todos(files)?;
 
-    if let Some(base_branch) = args.git {
+    if let Some(base_branch) = &args.git {
         println!(
-            "Get all issue IDs which should be addressed by this branch compared to its base."
+            "Get all issue IDs which should be addressed by this branch compared to its base {base_branch}."
         );
-        let resolving_issues = git::resolving_issues(&args.path, &base_branch)?;
+        let resolving_issues = git::resolving_issues(&args.path, base_branch)?;
         let unresolved_todos: Vec<TodoInCode> = todos
             .into_iter()
             .filter(|todo| resolving_issues.contains(&todo.ticket_id))
